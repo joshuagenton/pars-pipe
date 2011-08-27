@@ -1,0 +1,75 @@
+#summary A simple start top use pars pipe and rules
+
+= Simple - How to use? =
+
+There are already 2 two main methods available in pipe class, `append(_$rules_)` and `parse(_$data_)`. First of all you create an instance.
+
+{{{
+$pipe = new pipe();
+}}}
+
+And then you append the rules:
+
+{{{
+$slicer = new slice('<div class="news-item">', '</div>');
+
+$pipe->append($slicer);
+
+$title_fetcher = new css('span.title');
+
+$pipe->append($title_fetcher);
+}}}
+
+Or you can append multiple rules:
+
+{{{
+
+$rules = array(
+   new slice('<div class="news-item">', '</div>'),
+   new css('span.title')
+);
+
+$pipe->append($rules);
+
+}}}
+
+And finally you parse the data you want:
+
+{{{
+
+$content = file_get_contents('http://www.example.com');
+
+$result = $pipe->parse($content);
+
+print_r($result);
+
+}}}
+
+= Rule Types =
+
+There are currently 3 rule-types available, 
+
+ # `slice($from, $to)` - get data between two strings.
+ # `regexp($pattern)` - apply a regular expression match and return back-references.
+ # `css($selector)` - get content inside any css3 element which you select using css3 selectors.
+
+= Nested rules =
+
+As you can see in my google-search example we want every search result have an array of `title`, `link`, `description`, so i use nested rules you can see below:
+
+{{{
+
+	$pipe = new pipe();
+		
+	$pipe->append(new rule(new slice('<!--m-->', '<!--n-->'), HTML, MULTI_ITEM,
+					array(
+					'title'	=> new rule(new regexp('<!--m-->.*?<a .* onmousedown="return [^>]*>(.*?)</a></h3>.*'), PLAIN_TEXT, SINGLE_ITEM),
+					'link'	 => new rule(new css('li.g div.vsc div.s div.f cite'), PLAIN_TEXT, SINGLE_ITEM),
+					'summary'  => new rule(new css('div.s span.st'), PLAIN_TEXT, SINGLE_ITEM)
+					)
+				)
+			);
+			
+	return $pipe->parse($result);
+
+}}}
