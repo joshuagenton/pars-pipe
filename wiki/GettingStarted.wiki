@@ -1,4 +1,4 @@
-#summary A simple start top use pars pipe and rules
+#summary A simple start to use pars pipe and rules
 
 = Simple - How to use? =
 
