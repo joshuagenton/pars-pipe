@@ -11,38 +11,64 @@ $pipe = new pipe();
 And then you append the rules:
 
 {{{
-$slicer = new slice('<div class="news-item">', '</div>');
-
+$slicer = new rule(new slice('<div class="news-item">', '</div>', HTML, MULTI_ITEM));
 $pipe->append($slicer);
-
-$title_fetcher = new css('span.title');
-
-$pipe->append($title_fetcher);
 }}}
 
-Or you can append multiple rules:
+HTML - Tells parser to keep aggregated data as Html. (Use PLAIN_TEXT to strip html tags)
+MULTI_ITEM - Tells that `slice` rule need to be applied multiple times since there are `many` (not just one) `news-item`s on the page. (User SINGLE_ITEM if there is only 1 new-item)
 
+So in this example if you do:
+{{{
+$html = '
+  <body>
+    <div class="news-item"><h2>News Title 1</h2><span>Content 1</span></div>
+    <div>Some garbage</div>
+    <div class="news-item"><h2>News Title 2</h2><span>Content 2</span></div>
+  </body>';
+
+$result = $pipe->parse($html);
+}}}
+
+Then $result will be
+{{{
+array(
+  '<h2>News Title 1</h2><span>Content 1</span>',
+  '<h2>News Title 2</h2><span>Content 2</span>'
+)
+}}}
+
+In a more complex situation (reality) you need the result to be more structured. Think of an associative array of news items.
+
+You need to use 4th parameter of `rule` class ($crawlers) as you instantiate it:
+$crawlers is an associative array of rules that tells parser to how to make $result to have a good structure. (Where exactly to find the `title` and where exactly to find `content`)
+
+In fact $crawlers tells parser to run `title` and `link` rules after you found a news-item.
+
+Geeks Note that these rules (two rule-types of css) have their own 4th parameter ($crawlers). Its a recursive world you know!
 {{{
 
-$rules = array(
-   new slice('<div class="news-item">', '</div>'),
-   new css('span.title')
+$crawlers = array(
+   'title' => new rule(new css('h2'), PLAIN_TEXT, SINGLE_ITEM),
+   'content' => new rule(new css('span'), PLAIN_TEXT, SINGLE_ITEM/*, $content_crawlers for geeks */)
 );
 
-$pipe->append($rules);
+$slicer = new rule(new slice('<div class="news-item">', '</div>', HTML, MULTI_ITEM, $crawlers));
+$pipe->append($slicer);
 
+// $html = ... (See example above)
+// OR
+// $html = file_get_contents('http://www.example.com/news/technology');
+
+$result = $pipe->parse($html);
 }}}
 
-And finally you parse the data you want:
-
+Now $result is more structured:
 {{{
-
-$content = file_get_contents('http://www.example.com');
-
-$result = $pipe->parse($content);
-
-print_r($result);
-
+array(
+  array('title' => 'News Title 1', 'content' => 'Content 1'),
+  array('title' => 'News Title 2', 'content' => 'Content 2')
+)
 }}}
 
 = Rule Types =
@@ -70,6 +96,6 @@ As you can see in my google-search example we want every search result have an a
 				)
 			);
 			
-	return $pipe->parse($result);
+	return $pipe->parse($html);
 
 }}}
