@@ -1,0 +1,1 @@
+ParsPipe is a simple and useful class to manipulate and aggregate data from web pages. You can create rules and fetch any information you want from any source using those rules. One example would be Google search result fetching and finding your position in google searches.
